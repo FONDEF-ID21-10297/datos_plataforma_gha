@@ -1,0 +1,46 @@
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  schedule:
+  - cron: 0 0 * * *
+
+name: download-data-make-prediction.yaml
+
+permissions: read-all
+
+jobs:
+  download-data-make-prediction:
+  
+    runs-on: ubuntu-latest
+    
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+
+      - name: Run R process
+        shell: Rscript {0}
+        run: |
+          source("R/01_data_potencial.R")
+          
+      - name: Commit files
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add data/potencial/* --all
+          git commit -am "updating data" --author 'Joshua Kunst <jbkunst@gmail.com>'
+          git push
+
+  
+  
