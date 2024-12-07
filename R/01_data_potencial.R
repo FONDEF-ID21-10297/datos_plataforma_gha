@@ -261,20 +261,20 @@ cli::cli_h1("Process")
 
 fecha_hoy <- today()
 
-cli::cli_h2("Download rasters")
-purrr::walk2(sites, rep(fecha_hoy, 2), download_rasters_site_date)
-
-cli::cli_h2("Indices")
-purrr::walk(sites, get_indices)
-
-cli::cli_h2("Smoothing")
-purrr::walk(sites, smoothing_rasters, date = fecha_hoy)
-
-cli::cli_h2("Climate")
-purrr::walk(sites, get_climate, date = fecha_hoy)
-
-# cli::cli_h2("Cleanup")
-fs::dir_delete("outputs/")
+# cli::cli_h2("Download rasters")
+# purrr::walk2(sites, rep(fecha_hoy, 2), download_rasters_site_date)
+# 
+# cli::cli_h2("Indices")
+# purrr::walk(sites, get_indices)
+# 
+# cli::cli_h2("Smoothing")
+# purrr::walk(sites, smoothing_rasters, date = fecha_hoy)
+# 
+# cli::cli_h2("Climate")
+# purrr::walk(sites, get_climate, date = fecha_hoy)
+# 
+# # cli::cli_h2("Cleanup")
+# fs::dir_delete("outputs/")
 
 fs::dir_create("data/potencial")
 writeLines(as.character(now()),  glue::glue("data/potencial/{fecha_hoy}.txt"))
