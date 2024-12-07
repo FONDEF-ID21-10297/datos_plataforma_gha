@@ -20,6 +20,7 @@ Imports:
     lubridate,
     stringr,
     terra,
-    dplyr
+    dplyr,
+    imputeTS
 Remotes: 
     github::frzambra/agvAPI
