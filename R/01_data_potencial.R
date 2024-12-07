@@ -280,32 +280,32 @@ fs::dir_create("data/potencial")
 writeLines(as.character(now()),  glue::glue("data/potencial/{fecha_hoy}.txt"))
 
 # All dates ---------------------------------------------------------------
-stop()
-dates <- seq(ymd("20241001"), today() - 1, by = "1 day")
-dates <- rev(dates)
-dates <- NULL
-
-walk(dates, function(date = sample(dates, 1)){
-
-  cli::cli_h1(as.character(date))
-
-  cli::cli_h2("Cleanup")
-  fs::dir_delete("outputs/")
-
-  cli::cli_h2("Download rasters")
-  purrr::walk2(sites, rep(date, 2), download_rasters_site_date)
-
-  cli::cli_h2("Indices")
-  purrr::walk(sites, get_indices)
-
-  cli::cli_h2("Smoothing")
-
-  purrr::walk(sites, smoothing_rasters, date = date)
-
-  cli::cli_h2("Cleanup")
-  fs::dir_delete("outputs/")
-
-})
+# stop()
+# dates <- seq(ymd("20241001"), today() - 1, by = "1 day")
+# dates <- rev(dates)
+# dates <- NULL
+# 
+# walk(dates, function(date = sample(dates, 1)){
+# 
+#   cli::cli_h1(as.character(date))
+# 
+#   cli::cli_h2("Cleanup")
+#   fs::dir_delete("outputs/")
+# 
+#   cli::cli_h2("Download rasters")
+#   purrr::walk2(sites, rep(date, 2), download_rasters_site_date)
+# 
+#   cli::cli_h2("Indices")
+#   purrr::walk(sites, get_indices)
+# 
+#   cli::cli_h2("Smoothing")
+# 
+#   purrr::walk(sites, smoothing_rasters, date = date)
+# 
+#   cli::cli_h2("Cleanup")
+#   fs::dir_delete("outputs/")
+# 
+# })
 
 
 
