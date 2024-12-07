@@ -10,16 +10,16 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.0.0
 Imports:
-    earthdatalogin
-    gdalcubes
-    sf
-    glue
-    fs
-    purrr
-    rstac
-    lubridate
-    stringr
-    terra
+    earthdatalogin,
+    gdalcubes,
+    sf,
+    glue,
+    fs,
+    purrr,
+    rstac,
+    lubridate,
+    stringr,
+    terra,
     dplyr
 Remotes: 
     frzambra/agvAPI
