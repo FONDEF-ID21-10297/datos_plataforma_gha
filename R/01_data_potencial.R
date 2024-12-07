@@ -277,7 +277,7 @@ purrr::walk(sites, get_climate, date = fecha_hoy)
 fs::dir_delete("outputs/")
 
 fs::dir_create("data/potencial")
-writeLines(as.character(now()),  glue::glue("data/potencial/{date}.txt"))
+writeLines(as.character(now()),  glue::glue("data/potencial/{fecha_hoy}.txt"))
 
 # All dates ---------------------------------------------------------------
 stop()
