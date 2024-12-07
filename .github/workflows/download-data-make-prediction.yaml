@@ -34,13 +34,14 @@ jobs:
         run: |
           pak::pkg_install("frzambra/agvAPI")
           source("R/01_data_potencial.R")
-          
-      - name: Commit and push changes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+  
+      - name: Commit and push changes
+        run: |
           git add .
           git commit -m "Automated changes from workflow"
           git push
