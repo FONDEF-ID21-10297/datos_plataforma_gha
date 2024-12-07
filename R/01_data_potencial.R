@@ -11,8 +11,9 @@ library(lubridate)
 library(stringr)
 library(terra)
 library(dplyr)
-library(tidyr)
-library(ggplot2)
+# library(tidyr)
+# library(ggplot2)
+library(agvAPI) # remotes::install_github('frzambra/agvAPI')
 
 # Parameters --------------------------------------------------------------
 cli::cli_h1("Parameters")
@@ -28,6 +29,10 @@ sites <- fs::dir_ls("data/vectorial/", regexp = "gpkg") |>
   basename() |>
   tools::file_path_sans_ext()
 
+serials <- list(
+  la_esperanza = c('00205018'),
+  rio_claro = c('00203E6E')
+  )
 
 # Functions ---------------------------------------------------------------
 download_rasters_site_date <- function(site = "la_esperanza",
@@ -241,7 +246,15 @@ smoothing_rasters <- function(site = "rio_claro", date = today()){
 
 }
 
-get_climate <- function(site = "rio_claro", date = today())
+get_climate <- function(site = "rio_claro", date = today()){
+  
+  cli::cli_h3("get_climate: {site} date {date}")
+
+  dET0 <- getDataAGV_clima(serials[[site]][1], var = 'ETo', time_span = c(date - days(1), date))
+  dVPD <- getDataAGV_clima(serials[[site]][1], var = 'VPD', time_span = c(date - days(1), date))
+  dTmp <- getDataAGV_clima(serials[[site]][1], var = 'Temperature', time_span = c(date - days(1), date))
+  
+}
 
 # Process -----------------------------------------------------------------
 cli::cli_h1("Process")
@@ -258,12 +271,13 @@ cli::cli_h2("Smoothing")
 purrr::walk(sites, smoothing_rasters, date = fecha_hoy)
 
 cli::cli_h2("Climate")
-purrr::walk(sites, smoothing_rasters, date = fecha_hoy)
-
+purrr::walk(sites, get_climate, date = fecha_hoy)
 
 # cli::cli_h2("Cleanup")
-# fs::dir_delete("outputs/")
+fs::dir_delete("outputs/")
 
+fs::dir_create("data/potencial")
+writeLines(as.character(now()),  glue::glue("data/potencial/{date}.txt"))
 
 # All dates ---------------------------------------------------------------
 stop()
