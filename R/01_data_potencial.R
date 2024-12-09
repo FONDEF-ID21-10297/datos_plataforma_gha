@@ -1,38 +1,38 @@
 # Packages ---------------------------------------------------------------
 cli::cli_h1("Packages")
-library(earthdatalogin)
-library(gdalcubes)
-library(sf)
 library(glue)
-library(fs)
-library(purrr)
-library(rstac)
 library(lubridate)
-library(stringr)
-library(terra)
-library(dplyr)
+# library(earthdatalogin)
+# library(gdalcubes)
+# library(sf)
+# library(fs)
+# library(purrr)
+# library(rstac)
+# library(stringr)
+# library(terra)
+# library(dplyr)
 # library(tidyr)
 # library(ggplot2)
-library(agvAPI) # remotes::install_github('frzambra/agvAPI')
+# library(agvAPI) # remotes::install_github('frzambra/agvAPI')
 
 # Parameters --------------------------------------------------------------
 cli::cli_h1("Parameters")
 
-edl_netrc(
-  username = Sys.getenv("USERNAME"),
-  password = Sys.getenv("PASSWORD")
-  )
-
-with_gdalcubes()
-
-sites <- fs::dir_ls("data/vectorial/", regexp = "gpkg") |>
-  basename() |>
-  tools::file_path_sans_ext()
-
-serials <- list(
-  la_esperanza = c('00205018'),
-  rio_claro = c('00203E6E')
-  )
+# edl_netrc(
+#   username = Sys.getenv("USERNAME"),
+#   password = Sys.getenv("PASSWORD")
+#   )
+# 
+# with_gdalcubes()
+# 
+# sites <- fs::dir_ls("data/vectorial/", regexp = "gpkg") |>
+#   basename() |>
+#   tools::file_path_sans_ext()
+# 
+# serials <- list(
+#   la_esperanza = c('00205018'),
+#   rio_claro = c('00203E6E')
+#   )
 
 # Functions ---------------------------------------------------------------
 download_rasters_site_date <- function(site = "la_esperanza",
