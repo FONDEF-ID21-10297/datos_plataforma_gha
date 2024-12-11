@@ -37,8 +37,8 @@ jobs:
             
       - name: Configure Git
         run: |
-          git config --global user.name "GitHub Action Bot"
-          git config --global user.email "bot@github.com"
+          git config --global user.name "jbkunst"
+          git config --global user.email "jbkunst@gmail.com"
 
       - name: Commit and Push Changes
         env:
