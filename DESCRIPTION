@@ -2,8 +2,7 @@ Package: datos_plataforma_gha
 Title: datos_plataforma_gha
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+    person("Joshua", "Kunst", role = c("aut", "cre"), email = "jbkunst@gmail.com")
 Description: datos_plataforma_gha
 License: MIT + file LICENSE
 Encoding: UTF-8
