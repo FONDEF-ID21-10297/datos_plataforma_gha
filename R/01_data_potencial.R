@@ -246,13 +246,71 @@ smoothing_rasters <- function(site = "rio_claro", date = today()){
 
 }
 
-get_climate <- function(site = "rio_claro", date = today()){
+# GHA debe descargar los datos con fecha de "ayer".
+# Por defecto obtiene datos de ayer
+get_climate <- function(site = "la_esperanza", date = today() - days(1)){
   
   cli::cli_h3("get_climate: {site} date {date}")
 
-  dET0 <- getDataAGV_clima(serials[[site]][1], var = 'ETo', time_span = c(date - days(1), date))
-  dVPD <- getDataAGV_clima(serials[[site]][1], var = 'VPD', time_span = c(date - days(1), date))
-  dTmp <- getDataAGV_clima(serials[[site]][1], var = 'Temperature', time_span = c(date - days(1), date))
+  dET0 <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'ETo', time_span = c(date - days(1), date + days(1)))
+  dVPD <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'VPD', time_span = c(date - days(1), date + days(1)))
+  dTmp <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'Temperature', time_span = c(date - days(1), date + days(1)))
+  dHR  <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'HC Relative humidity', time_span = c(date - days(1), date + days(1)))
+  
+  dET0 <- dET0 |> 
+    filter(as_date(datetime) == date)
+  
+  datas <- list(VPD = dVPD, Temperature = dTmp, HC = dHR) |> 
+    map(mutate, datetime = as_datetime(datetime, tz = "America/Santiago")) |> 
+    map(mutate, datetime = floor_date(datetime), hora = hour(datetime), date_registro = as_date(datetime)) |> 
+    # me quedo con los del día de interés
+    map(filter, date_registro == date) |>
+    map(filter, between(hora, 13, 14)) |> 
+    map(select, -c(datetime, extract_id, hora)) |> 
+    map(group_by, date_registro) |> 
+    map(summarise_all, function(x) mean(x,  na.rm = TRUE)) |> 
+    map(select, -date_registro) |> 
+    map(pull)
+  
+  datas
+  
+  # esta parte requiere NO borrar todavias los tiffs
+  raster <- fs::dir_ls(glue::glue("outputs/sentinel/{site}")) |> 
+    head(1) |> 
+    rast() 
+  
+  raster <- raster[[1]]
+  
+  raster_et0 <- raster
+  values(raster_et0) <- dET0$`ETo[mm] (mm)`
+  
+  raster_vpd <- raster
+  values(raster_vpd) <- datas$VPD
+
+  raster_tmp <- raster
+  values(raster_tmp) <- datas$Temperature
+
+  raster_hc <- raster
+  values(raster_hc) <- datas$HC
+  
+  raster_climate <- c(raster_et0, raster_vpd, raster_tmp, raster_hc) 
+  
+  names(raster_climate) <- c("eto", "vpd", "tmp", "hc")
+  varnames(raster_climate) <- ""
+  
+  cli::cli_inform("write_tif raster_climate")
+  # debiese ser data temporal pues cada archivo pesa 9 MB por día en la_esperanza
+  dir_out <- glue("outputs/climate/{site}")
+  
+  if(fs::dir_exists(dir_out)) fs::dir_delete(dir_out)
+  if(!fs::dir_exists(dir_out)) fs::dir_create(dir_out)
+  
+  terra::writeRaster(
+    raster_climate,
+    glue::glue("{dir_out}/{date}.tif"),
+    gdal = c("COMPRESS=DEFLATE", "GDAL_PAM_ENABLED=NO"), # baja de 180 a 142 (reduccion 20%)
+    overwrite = TRUE
+  )
   
 }
 
@@ -271,7 +329,7 @@ cli::cli_h2("Smoothing")
 purrr::walk(sites, smoothing_rasters, date = fecha_hoy)
 
 cli::cli_h2("Climate")
-purrr::walk(sites, get_climate, date = fecha_hoy)
+purrr::walk(sites, get_climate, date = fecha_hoy - days(1))
 
 # cli::cli_h2("Cleanup")
 fs::dir_delete("outputs/")
