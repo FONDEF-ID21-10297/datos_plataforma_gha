@@ -11,4 +11,14 @@ RoxygenNote: 7.0.0
 Imports:
     glue,
     lubridate,
-    fs
+    fs,
+    earthdatalogin,
+    gdalcubes,
+    sf,
+    purrr,
+    rstac,
+    stringr,
+    terra,
+    dplyr,
+    imputeTS
+Remotes: frzambra/agvAPI

@@ -3,36 +3,36 @@ cli::cli_h1("Packages")
 library(glue)
 library(lubridate)
 library(fs)
-# library(earthdatalogin)
-# library(gdalcubes)
-# library(sf)
-# library(purrr)
-# library(rstac)
-# library(stringr)
-# library(terra)
-# library(dplyr)
-# library(tidyr)
-# library(ggplot2)
-# library(agvAPI) # remotes::install_github('frzambra/agvAPI')
+library(earthdatalogin)
+library(gdalcubes)
+library(sf)
+library(purrr)
+library(rstac)
+library(stringr)
+library(terra)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(agvAPI) # remotes::install_github('frzambra/agvAPI')
 
 # Parameters --------------------------------------------------------------
 cli::cli_h1("Parameters")
 
-# edl_netrc(
-#   username = Sys.getenv("USERNAME"),
-#   password = Sys.getenv("PASSWORD")
-#   )
-# 
-# with_gdalcubes()
-# 
-# sites <- fs::dir_ls("data/vectorial/", regexp = "gpkg") |>
-#   basename() |>
-#   tools::file_path_sans_ext()
-# 
-# serials <- list(
-#   la_esperanza = c('00205018'),
-#   rio_claro = c('00203E6E')
-#   )
+edl_netrc(
+  username = Sys.getenv("USERNAME"),
+  password = Sys.getenv("PASSWORD")
+  )
+
+with_gdalcubes()
+
+sites <- fs::dir_ls("data/vectorial/", regexp = "gpkg") |>
+  basename() |>
+  tools::file_path_sans_ext()
+
+serials <- list(
+  la_esperanza = c('00205018'),
+  rio_claro = c('00203E6E')
+  )
 
 # Functions ---------------------------------------------------------------
 download_rasters_site_date <- function(site = "la_esperanza",
@@ -261,20 +261,20 @@ cli::cli_h1("Process")
 
 fecha_hoy <- today()
 
-# cli::cli_h2("Download rasters")
-# purrr::walk2(sites, rep(fecha_hoy, 2), download_rasters_site_date)
-# 
-# cli::cli_h2("Indices")
-# purrr::walk(sites, get_indices)
-# 
-# cli::cli_h2("Smoothing")
-# purrr::walk(sites, smoothing_rasters, date = fecha_hoy)
-# 
-# cli::cli_h2("Climate")
-# purrr::walk(sites, get_climate, date = fecha_hoy)
-# 
-# # cli::cli_h2("Cleanup")
-# fs::dir_delete("outputs/")
+cli::cli_h2("Download rasters")
+purrr::walk2(sites, rep(fecha_hoy, 2), download_rasters_site_date)
+
+cli::cli_h2("Indices")
+purrr::walk(sites, get_indices)
+
+cli::cli_h2("Smoothing")
+purrr::walk(sites, smoothing_rasters, date = fecha_hoy)
+
+cli::cli_h2("Climate")
+purrr::walk(sites, get_climate, date = fecha_hoy)
+
+# cli::cli_h2("Cleanup")
+fs::dir_delete("outputs/")
 
 fs::dir_create("data/potencial")
 writeLines(as.character(now()),  glue::glue("data/potencial/{fecha_hoy}.txt"))
