@@ -35,18 +35,13 @@ jobs:
           # pak::pkg_install("frzambra/agvAPI")
           source("R/01_data_potencial.R")
             
-      - name: Configure Git
+      - name: Commit files
         run: |
-          git config --global user.name "jbkunst"
-          git config --global user.email "jbkunst@gmail.com"
-
-      - name: Commit and Push Changes
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |
-          git add .
-          git commit -m "Automated commit from GitHub Actions"
-          git push "https://${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add data/potencial/*
+          git commit -am "updating data/potencial/" --author 'Joshua Kunst <jbkunst@gmail.com>'
+          git push
   
     
     
