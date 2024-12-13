@@ -20,5 +20,6 @@ Imports:
     stringr,
     terra,
     dplyr,
+    tidyr,
     imputeTS
 Remotes: frzambra/agvAPI
