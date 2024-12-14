@@ -19,8 +19,10 @@ library(agvAPI) # remotes::install_github('frzambra/agvAPI')
 cli::cli_h1("Parameters")
 
 edl_netrc(
-  username = Sys.getenv("USERNAME"),
-  password = Sys.getenv("PASSWORD")
+  # username = Sys.getenv("USERNAME"),
+  # password = Sys.getenv("PASSWORD")
+  username = "",
+  password = ""
   )
 
 with_gdalcubes()

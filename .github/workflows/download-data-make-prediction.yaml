@@ -27,6 +27,15 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
 
+      - name: Create and populate .Renviron file
+        env:
+          USERNAME: ${{ secrets.USERNAME }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+        run: |
+          touch .Renviron
+          echo USERNAME="$USERNAME" >> .Renviron
+          echo PASSWORD="$PASSWORD" >> .Renviron
+
       - name: Run R process
         shell: Rscript {0}
         run: |
