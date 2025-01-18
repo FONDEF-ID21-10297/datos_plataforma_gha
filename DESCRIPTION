@@ -21,5 +21,8 @@ Imports:
     terra,
     dplyr,
     tidyr,
-    imputeTS
+    imputeTS,
+    tidymodels,
+    terra,
+    readr
 Remotes: frzambra/agvAPI
