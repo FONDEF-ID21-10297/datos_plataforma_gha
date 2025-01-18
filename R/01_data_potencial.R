@@ -14,6 +14,8 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(agvAPI) # remotes::install_github('frzambra/agvAPI')
+library(tidymodels)
+library(terra)
 
 # Parameters --------------------------------------------------------------
 cli::cli_h1("Parameters")
@@ -183,7 +185,7 @@ get_indices <-  function(site = "rio_claro"){
 smoothing_rasters <- function(site = "rio_claro", date = today()){
   
   # esta funcion obtiene suaviza  considerando las valores/fechas que 
-  # hay en la carpeta, para luego quedarse con el valor de la fehca de
+  # hay en la carpeta, para luego quedarse con el valor de la fecha de
   # definida en argumento "date", la cual debiese coincidir con el valor 
   # del argumento "end" al ejectuar la funcion download_rasters_site_date
   # 
@@ -297,7 +299,7 @@ get_climate <- function(site = "la_esperanza", date = today() - days(1)){
   
   raster_climate <- c(raster_et0, raster_vpd, raster_tmp, raster_hc) 
   
-  names(raster_climate) <- c("eto", "vpd", "tmp", "hc")
+  names(raster_climate) <- c("eto", "vpd_medio", "t_media", "rh_media")
   varnames(raster_climate) <- ""
   
   cli::cli_inform("write_tif raster_climate")
@@ -316,6 +318,48 @@ get_climate <- function(site = "la_esperanza", date = today() - days(1)){
   
 }
 
+make_prediction <- function(site = "la_esperanza", date = today()){
+  
+  cli::cli_h3("make_prediction: {site} date {date}")
+  
+  # https://github.com/mherreradiaz/garces/blob/probar_modelos/script/14_1_predecir_potencial_raster.R#L83-L96
+  
+  r_ind <- rast(str_glue("outputs/suavizado/{site}/{date}.tif"))
+  
+  r_cli <- rast(str_glue("outputs/climate/{site}/{date - day(1)}.tif"))
+  
+  r <- c(r_ind, r_cli)
+  
+  names(r) <- tolower(names(r))
+  names(r)
+
+  modelo <- readRDS("data/model/random_forest_tme_split.rds")
+  
+  #funcion para aplicar el modelo en los rasters 
+  fun<-function(...){
+    p<-predict(...)
+    return(as.matrix(as.numeric(p[, 1, drop=T]))) 
+  }
+  
+  r_df <- as.data.frame(r) |> 
+    mutate(fecha = as.character(date))
+  
+  out <- predict(modelo, r_df)
+  
+  out_ras         <- r[[1]]
+  names(out_ras)  <- '.pred'
+  values(out_ras) <- out$.pred
+  
+  plot(out_ras)
+  
+  
+  plot(r)
+  
+  
+}
+
+
+
 # Process -----------------------------------------------------------------
 cli::cli_h1("Process")
 
@@ -332,6 +376,9 @@ purrr::walk(sites, smoothing_rasters, date = fecha_hoy)
 
 cli::cli_h2("Climate")
 purrr::walk(sites, get_climate, date = fecha_hoy - days(1))
+
+purrr::walk(sites, make_prediction, date = fecha_hoy)
+
 
 # cli::cli_h2("Cleanup")
 fs::dir_delete("outputs/")
