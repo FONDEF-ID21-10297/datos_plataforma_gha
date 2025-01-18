@@ -16,6 +16,7 @@ library(ggplot2)
 library(agvAPI) # remotes::install_github('frzambra/agvAPI')
 library(tidymodels)
 library(terra)
+library(readr)
 
 # Parameters --------------------------------------------------------------
 cli::cli_h1("Parameters")
@@ -39,6 +40,14 @@ serials <- list(
   )
 
 # Functions ---------------------------------------------------------------
+equipo_sector_a_sector_equipo <- function(x = c("a_b", "c_d")){
+  x |> 
+    str_split("_") |> 
+    map_chr(function(l){
+      str_c(l[2], "_", l[1])
+    })
+}
+
 download_rasters_site_date <- function(site = "la_esperanza",
                                        end = today(),
                                        start = end - days(30)){
@@ -318,9 +327,9 @@ get_climate <- function(site = "la_esperanza", date = today() - days(1)){
   
 }
 
-make_prediction <- function(site = "la_esperanza", date = today()){
+make_prediction_and_save <- function(site = "la_esperanza", date = today()){
   
-  cli::cli_h3("make_prediction: {site} date {date}")
+  cli::cli_h3("make_prediction_and_save: {site} date {date}")
   
   # https://github.com/mherreradiaz/garces/blob/probar_modelos/script/14_1_predecir_potencial_raster.R#L83-L96
   
@@ -335,12 +344,6 @@ make_prediction <- function(site = "la_esperanza", date = today()){
 
   modelo <- readRDS("data/model/random_forest_tme_split.rds")
   
-  #funcion para aplicar el modelo en los rasters 
-  fun<-function(...){
-    p<-predict(...)
-    return(as.matrix(as.numeric(p[, 1, drop=T]))) 
-  }
-  
   r_df <- as.data.frame(r) |> 
     mutate(fecha = as.character(date))
   
@@ -348,17 +351,98 @@ make_prediction <- function(site = "la_esperanza", date = today()){
   
   out_ras         <- r[[1]]
   names(out_ras)  <- '.pred'
-  values(out_ras) <- out$.pred
-  
-  plot(out_ras)
-  
+  values(out_ras) <- round(out$.pred, 5)
   
   plot(r)
+  plot(out_ras)
+  
+  # potencial raster --------------------------------------------------------
+  cli::cli_inform("export potencial raster")
+
+  fs::dir_create(glue("data/potencial-raster/{site}/"))
+  fout <- glue("data/potencial-raster/{site}/{date}.tif")
+  
+  terra::writeRaster(
+    out_ras,
+    fout,
+    gdal = c("COMPRESS=DEFLATE", "GDAL_PAM_ENABLED=NO"), # baja de 180 a 142 (reduccion 20%)
+    overwrite = TRUE
+  )
+  
+  # potencial csv -----------------------------------------------------------
+  cli::cli_inform("export potencial csv")
+  
+  site_sf <- read_sf(glue("data/vectorial/{site}.gpkg"), layer = 'sectores_riego') |>
+    st_transform(32719) |>
+    mutate(id = row_number()) |> 
+    mutate(equipo_sector = coalesce(equipo_sector, "1_6")) |> 
+    mutate(sector_equipo = equipo_sector_a_sector_equipo(equipo_sector))
+  
+  site_sf
+  
+  plot(site_sf)
+
+  #variación temporal del potencial en los sectores de riego
+  dpot_site <- terra::extract(out_ras, site_sf, fun = mean) |> 
+    as_tibble() |> 
+    pivot_longer(-ID, names_to = "date", values_to = "potencial") |>
+    mutate(date = ymd(!!date), potencial = round(potencial, 4)) |> 
+    rename(id = ID) |> 
+    mutate(site = site, .before = 1)
+  
+  dpot_site
+  
+  site_sf |> 
+    left_join(dpot_site, by = join_by(id)) |> 
+    plot()
+  
+  fs::dir_create("data/potencial-csv")
+  file_pot <- "data/potencial-csv/potencial-sites.csv"
+  
+  if(file.exists(file_pot)) {
+    dpot <- read_csv(file_pot)
+  } else {
+    dpot <- tibble()
+  }
+  
+  dpot_site |> 
+    bind_rows(dpot) |> 
+    distinct() |> 
+    arrange(date, id, site) |> 
+    write_csv(file_pot)
+  
+  
+
+  # climate -----------------------------------------------------------------
+  fs::dir_create(glue("data/climate"))
+  
+  cli::cli_inform("write_csv")
+  file_cli <- "data/climate/climate-sites.csv"
+  
+  if(file.exists(file_cli)) {
+    dcli <- read_csv(file_cli)
+  } else {
+    dcli <- tibble()
+  }
+  
+  r_cli |> 
+    as_tibble() |> 
+    # hacer mas simple 
+    mutate(across(where(is.numeric), function(x) round(x, 3))) |> 
+    distinct() |> 
+    mutate(
+      site = site,
+      date = date,
+      .before = 1
+    ) |> 
+    bind_rows(dcli) |> 
+    distinct() |> 
+    arrange(date, site) |> 
+    write_csv(file_cli)
+  
   
   
 }
-
-
 
 # Process -----------------------------------------------------------------
 cli::cli_h1("Process")
@@ -377,14 +461,12 @@ purrr::walk(sites, smoothing_rasters, date = fecha_hoy)
 cli::cli_h2("Climate")
 purrr::walk(sites, get_climate, date = fecha_hoy - days(1))
 
-purrr::walk(sites, make_prediction, date = fecha_hoy)
-
+cli::cli_h2("make_prediction_and_save")
+purrr::walk(sites, make_prediction_and_save, date = fecha_hoy)
 
 # cli::cli_h2("Cleanup")
 fs::dir_delete("outputs/")
 
-fs::dir_create("data/potencial")
-writeLines(as.character(now()),  glue::glue("data/potencial/{fecha_hoy}.txt"))
 
 # All dates ---------------------------------------------------------------
 # stop()
