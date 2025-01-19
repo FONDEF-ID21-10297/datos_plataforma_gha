@@ -46,7 +46,7 @@ jobs:
         run: |
           git config --local user.email "jbkunst@gmail.com"
           git config --local user.name "jbkunst"
-          git add data/potencial/*
+          git add *
           git commit -am "updating data/potencial/" --author 'Joshua Kunst <jbkunst@gmail.com>'
           git push
   
