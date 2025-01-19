@@ -1,6 +1,6 @@
 ---
 title: "Readme"
-format: markdown
+format: gfm
 ---
 
 ```{r}

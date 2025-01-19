@@ -1,20 +1,14 @@
----
-title: Readme
-toc-title: Table of contents
----
+# Readme
 
-::: cell
-``` {.r .cell-code}
+
+``` r
 library(ggplot2)
 ```
-:::
 
-::::: cell
-``` {.r .cell-code}
+``` r
 dpot <- readr::read_csv("data/potencial-csv/potencial-sites.csv")
 ```
 
-::: {.cell-output .cell-output-stderr}
     Rows: 441 Columns: 4
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
@@ -24,26 +18,20 @@ dpot <- readr::read_csv("data/potencial-csv/potencial-sites.csv")
 
     ℹ Use `spec()` to retrieve the full column specification for this data.
     ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-:::
 
-``` {.r .cell-code}
+``` r
 ggplot(dpot, aes(date, potencial, color = factor(id), group = id)) +
   geom_line() +
   geom_point() +
   facet_wrap(vars(site))
 ```
 
-::: cell-output-display
-![](readme_files/figure-markdown/potencial-1.png)
-:::
-:::::
+![](readme_files/figure-commonmark/potencial-1.png)
 
-:::::: cell
-``` {.r .cell-code}
+``` r
 dcli <- readr::read_csv("data/climate/climate-sites.csv") 
 ```
 
-::: {.cell-output .cell-output-stderr}
     Rows: 42 Columns: 6
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
@@ -53,9 +41,8 @@ dcli <- readr::read_csv("data/climate/climate-sites.csv")
 
     ℹ Use `spec()` to retrieve the full column specification for this data.
     ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-:::
 
-``` {.r .cell-code}
+``` r
 dcli |> 
   tidyr::pivot_longer(cols = -c(site, date)) |> 
   ggplot(aes(date, value, color = site, group = site)) +
@@ -64,18 +51,12 @@ dcli |>
   facet_wrap(vars(name)) 
 ```
 
-::: {.cell-output .cell-output-stderr}
     Warning: Removed 2 rows containing missing values or values outside the scale range
     (`geom_point()`).
-:::
 
-::: cell-output-display
-![](readme_files/figure-markdown/clima-1.png)
-:::
-::::::
+![](readme_files/figure-commonmark/clima-1.png)
 
-:::: cell
-``` {.r .cell-code}
+``` r
 f <- fs::dir_ls("data/potencial-raster/la_esperanza/") |> 
   dplyr::last()
 
@@ -83,13 +64,9 @@ terra::rast(f) |>
   terra:::plot(main = f)
 ```
 
-::: cell-output-display
-![](readme_files/figure-markdown/la_esperanza-1.png)
-:::
-::::
+![](readme_files/figure-commonmark/la_esperanza-1.png)
 
-:::: cell
-``` {.r .cell-code}
+``` r
 f <- fs::dir_ls("data/potencial-raster/rio_claro/") |> 
   dplyr::last()
 
@@ -97,7 +74,4 @@ terra::rast(f) |>
   terra:::plot(main = f)
 ```
 
-::: cell-output-display
-![](readme_files/figure-markdown/rio_claro-1.png)
-:::
-::::
+![](readme_files/figure-commonmark/rio_claro-1.png)
