@@ -25,5 +25,6 @@ Imports:
     tidymodels,
     ranger,
     terra,
-    readr
+    readr,
+    quarto
 Remotes: frzambra/agvAPI
