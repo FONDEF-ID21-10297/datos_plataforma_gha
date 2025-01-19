@@ -1,0 +1,49 @@
+---
+title: "Readme"
+format: markdown
+---
+
+```{r}
+library(ggplot2)
+```
+
+
+```{r potencial}
+dpot <- readr::read_csv("data/potencial-csv/potencial-sites.csv")
+
+ggplot(dpot, aes(date, potencial, color = factor(id), group = id)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(site))
+```
+
+
+```{r clima}
+dcli <- readr::read_csv("data/climate/climate-sites.csv") 
+
+dcli |> 
+  tidyr::pivot_longer(cols = -c(site, date)) |> 
+  ggplot(aes(date, value, color = site, group = site)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(name)) 
+```
+
+```{r la_esperanza}
+f <- fs::dir_ls("data/potencial-raster/la_esperanza/") |> 
+  dplyr::last()
+
+terra::rast(f) |> 
+  terra:::plot(main = f)
+```
+```{r rio_claro}
+f <- fs::dir_ls("data/potencial-raster/rio_claro/") |> 
+  dplyr::last()
+
+terra::rast(f) |> 
+  terra:::plot(main = f)
+```
+
+
+
+
