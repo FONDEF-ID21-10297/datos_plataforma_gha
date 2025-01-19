@@ -46,7 +46,7 @@ jobs:
             
       - name: Render       
         run: |
-          quarto preview readme.qmd --to gfm --no-watch-inputs --no-browse
+          quarto render readme.qmd
           
       - name: Commit files
         run: |
