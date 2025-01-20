@@ -27,6 +27,8 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
 
+      - uses: quarto-dev/quarto-actions/setup@v2
+
       - name: Create and populate .Renviron file
         env:
           USERNAME: ${{ secrets.USERNAME }}
@@ -42,12 +44,16 @@ jobs:
           pak::pkg_install("frzambra/agvAPI")
           source("R/01_data_potencial.R")
             
+      - name: Render       
+        run: |
+          quarto preview readme.qmd --to gfm --no-watch-inputs --no-browse            
+            
       - name: Commit files
         run: |
           git config --local user.email "jbkunst@gmail.com"
           git config --local user.name "jbkunst"
-          git add data/potencial/*
-          git commit -am "updating data/potencial/" --author 'Joshua Kunst <jbkunst@gmail.com>'
+          git add *
+          git commit -am "updating data and report" --author 'Joshua Kunst <jbkunst@gmail.com>'
           git push
   
     
