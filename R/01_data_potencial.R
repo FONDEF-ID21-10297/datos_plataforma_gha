@@ -353,8 +353,8 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
   names(out_ras)  <- '.pred'
   values(out_ras) <- round(out$.pred, 5)
   
-  plot(r)
-  plot(out_ras)
+  # plot(r)
+  # plot(out_ras)
   
   # potencial raster --------------------------------------------------------
   cli::cli_inform("export potencial raster")
@@ -380,7 +380,7 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
   
   site_sf
   
-  plot(site_sf)
+  # plot(site_sf)
 
   #variación temporal del potencial en los sectores de riego
   dpot_site <- terra::extract(out_ras, site_sf, fun = mean) |> 
@@ -392,9 +392,9 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
   
   dpot_site
   
-  site_sf |> 
-    left_join(dpot_site, by = join_by(id)) |> 
-    plot()
+  # site_sf |> 
+  #   left_join(dpot_site, by = join_by(id)) |> 
+  #   plot()
   
   fs::dir_create("data/potencial-csv")
   file_pot <- "data/potencial-csv/potencial-sites.csv"

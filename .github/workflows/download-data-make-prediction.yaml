@@ -42,7 +42,7 @@ jobs:
         shell: Rscript {0}
         run: |
           pak::pkg_install("frzambra/agvAPI")
-          # source("R/01_data_potencial.R")
+          source("R/01_data_potencial.R")
             
       - name: Render       
         run: |

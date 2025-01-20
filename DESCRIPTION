@@ -21,6 +21,7 @@ Imports:
     terra,
     dplyr,
     tidyr,
+    ggplot2,
     imputeTS,
     tidymodels,
     ranger,
