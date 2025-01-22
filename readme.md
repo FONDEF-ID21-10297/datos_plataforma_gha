@@ -7,13 +7,13 @@ library(ggplot2)
 Sys.time()
 ```
 
-    [1] "2025-01-20 01:00:03 UTC"
+    [1] "2025-01-22 00:47:19 UTC"
 
 ``` r
 dpot <- readr::read_csv("data/potencial-csv/potencial-sites.csv")
 ```
 
-    Rows: 588 Columns: 4
+    Rows: 609 Columns: 4
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
     chr  (1): site
@@ -36,7 +36,7 @@ ggplot(dpot, aes(date, potencial, color = factor(id), group = id)) +
 dcli <- readr::read_csv("data/climate/climate-sites.csv") 
 ```
 
-    Rows: 55 Columns: 6
+    Rows: 56 Columns: 6
     ── Column specification ────────────────────────────────────────────────────────
     Delimiter: ","
     chr  (1): site
@@ -55,7 +55,7 @@ dcli |>
   facet_wrap(vars(name)) 
 ```
 
-    Warning: Removed 3 rows containing missing values or values outside the scale range
+    Warning: Removed 4 rows containing missing values or values outside the scale range
     (`geom_point()`).
 
 ![](readme_files/figure-commonmark/clima-1.png)
