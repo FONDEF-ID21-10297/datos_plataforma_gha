@@ -7,52 +7,32 @@ library(ggplot2)
 Sys.time()
 ```
 
-    [1] "2025-01-22 00:47:19 UTC"
+    [1] "2025-01-26 11:03:17 -03"
 
 ``` r
-dpot <- readr::read_csv("data/potencial-csv/potencial-sites.csv")
-```
+dpot <- readr::read_csv("data/potencial-csv/potencial-sites.csv", show_col_types = FALSE)
 
-    Rows: 609 Columns: 4
-    ── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ","
-    chr  (1): site
-    dbl  (2): id, potencial
-    date (1): date
-
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
-``` r
 ggplot(dpot, aes(date, potencial, color = factor(id), group = id)) +
   geom_line() +
   geom_point() +
-  facet_wrap(vars(site))
+  scale_color_viridis_d(option = "C", begin = .1, end = .9) + 
+  facet_wrap(vars(site), scales = "free") +
+  theme_minimal()
 ```
 
 ![](readme_files/figure-commonmark/potencial-1.png)
 
 ``` r
-dcli <- readr::read_csv("data/climate/climate-sites.csv") 
-```
+dcli <- readr::read_csv("data/climate/climate-sites.csv", show_col_types = FALSE) 
 
-    Rows: 56 Columns: 6
-    ── Column specification ────────────────────────────────────────────────────────
-    Delimiter: ","
-    chr  (1): site
-    dbl  (4): eto, vpd_medio, t_media, rh_media
-    date (1): date
-
-    ℹ Use `spec()` to retrieve the full column specification for this data.
-    ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
-``` r
 dcli |> 
   tidyr::pivot_longer(cols = -c(site, date)) |> 
   ggplot(aes(date, value, color = site, group = site)) +
   geom_line() +
   geom_point() +
-  facet_wrap(vars(name)) 
+  scale_color_viridis_d(option = "C", begin = .1, end = .9) + 
+  facet_wrap(vars(name), scales = "free") +
+  theme_minimal()
 ```
 
     Warning: Removed 4 rows containing missing values or values outside the scale range

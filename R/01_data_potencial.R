@@ -382,7 +382,7 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
   
   site_sf
   
-  if(interactive){
+  if(interactive()){
     plot(site_sf)
   }
   
@@ -396,7 +396,7 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
   
   dpot_site
   
-  if(interactive){
+  if(interactive()){
     site_sf |>
       left_join(dpot_site, by = join_by(id)) |> 
       plot()
@@ -472,46 +472,46 @@ fs::dir_delete("outputs/")
 
 
 # All dates ---------------------------------------------------------------
-# dates <- seq(ymd("20241001"), today() - 1, by = "1 day")
-# dates <- rev(dates)
-# 
-# dates_dwloaded <- fs::dir_ls("data/potencial-raster/", recurse = TRUE) |> 
-#   basename() |> 
-#   tools::file_path_sans_ext() |> 
-#   str_subset("[a-z]", negate = TRUE) |> 
-#   unique() |> 
-#   ymd()
-# 
-# dates <- setdiff(as.character(dates), as.character(dates_dwloaded))
-# dates <- ymd(dates)
-# 
-# dates
-# 
-# walk(dates, function(date = sample(dates, 1)){
-# 
-#   cli::cli_h1(as.character(date))
-# 
-#   cli::cli_h2("Cleanup")
-# 
-#   cli::cli_h2("Download rasters")
-#   purrr::walk2(sites, rep(date, 2), download_rasters_site_date)
-# 
-#   cli::cli_h2("Indices")
-#   purrr::walk(sites, get_indices)
-# 
-#   cli::cli_h2("Smoothing")
-#   purrr::walk(sites, smoothing_rasters, date = date)
-# 
-#   cli::cli_h2("Climate")
-#   purrr::walk(sites, get_climate, date = date - days(1))
-#   
-#   cli::cli_h2("make_prediction_and_save")
-#   purrr::walk(sites, make_prediction_and_save, date = date)
-#   
-#   cli::cli_h2("Cleanup")
-#   fs::dir_delete("outputs/")
-# 
-# })
+dates <- seq(ymd("20241001"), today() - 10, by = "1 day")
+dates <- rev(dates)
+
+dates_dwloaded <- fs::dir_ls("data/potencial-raster/", recurse = TRUE) |>
+  basename() |>
+  tools::file_path_sans_ext() |>
+  str_subset("[a-z]", negate = TRUE) |>
+  unique() |>
+  ymd()
+
+dates <- setdiff(as.character(dates), as.character(dates_dwloaded))
+dates <- ymd(dates)
+
+dates
+
+walk(dates, function(date = sample(dates, 1)){
+
+  cli::cli_h1(as.character(date))
+
+  cli::cli_h2("Cleanup")
+
+  cli::cli_h2("Download rasters")
+  purrr::walk2(sites, rep(date, 2), download_rasters_site_date)
+
+  cli::cli_h2("Indices")
+  purrr::walk(sites, get_indices)
+
+  cli::cli_h2("Smoothing")
+  purrr::walk(sites, smoothing_rasters, date = date)
+
+  cli::cli_h2("Climate")
+  purrr::walk(sites, get_climate, date = date - days(1))
+
+  cli::cli_h2("make_prediction_and_save")
+  purrr::walk(sites, make_prediction_and_save, date = date)
+
+  cli::cli_h2("Cleanup")
+  fs::dir_delete("outputs/")
+
+})
 
 
 

@@ -11,24 +11,28 @@ Sys.time()
 
 
 ```{r potencial}
-dpot <- readr::read_csv("data/potencial-csv/potencial-sites.csv")
+dpot <- readr::read_csv("data/potencial-csv/potencial-sites.csv", show_col_types = FALSE)
 
 ggplot(dpot, aes(date, potencial, color = factor(id), group = id)) +
   geom_line() +
   geom_point() +
-  facet_wrap(vars(site))
+  scale_color_viridis_d(option = "C", begin = .1, end = .9) + 
+  facet_wrap(vars(site), scales = "free") +
+  theme_minimal()
 ```
 
 
 ```{r clima}
-dcli <- readr::read_csv("data/climate/climate-sites.csv") 
+dcli <- readr::read_csv("data/climate/climate-sites.csv", show_col_types = FALSE) 
 
 dcli |> 
   tidyr::pivot_longer(cols = -c(site, date)) |> 
   ggplot(aes(date, value, color = site, group = site)) +
   geom_line() +
   geom_point() +
-  facet_wrap(vars(name)) 
+  scale_color_viridis_d(option = "C", begin = .1, end = .9) + 
+  facet_wrap(vars(name), scales = "free") +
+  theme_minimal()
 ```
 
 ```{r la_esperanza}
@@ -38,6 +42,7 @@ f <- fs::dir_ls("data/potencial-raster/la_esperanza/") |>
 terra::rast(f) |> 
   terra:::plot(main = f)
 ```
+
 ```{r rio_claro}
 f <- fs::dir_ls("data/potencial-raster/rio_claro/") |> 
   dplyr::last()
