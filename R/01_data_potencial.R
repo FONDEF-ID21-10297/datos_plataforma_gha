@@ -81,38 +81,42 @@ calc_et0 <- \(tmax, tmin, Ra) {
 }
 
 obtener_var <- \(sitio, inicio, final) {
-  
-  ema_id <- list('rio_claro' = 72,'la_esperanza' = 71)
-  
+  ema_id <- list('rio_claro' = 72, 'la_esperanza' = 71)
+
   if (!(sitio %in% names(ema_id))) {
     stop("Sitio inválido. Usa 'rio_claro' o 'la_esperanza'.")
   }
-  
+
   id <- ema_id[[sitio]]
-  
-  df <- get_agro_data(stations_id = id,
-                date_start = inicio, date_end = final) |> 
+
+  df <- get_agro_data(
+    stations_id = id,
+    date_start = inicio,
+    date_end = final
+  ) |>
     filter(as.Date(fecha_hora) < as.Date(now())) # LE BORRE EL ÚLTIMO DÍA YA QUE PUEDE QUE NO HAYAN DATOS COMPLETOS PARA TENER LA ET0
-  
-  df |> 
-    mutate(VPD = calc_vpd(temp_promedio_aire,humed_rel_promedio)) |> 
-    filter(between(hour(fecha_hora),13,14)) |> 
-    group_by(fecha = as.Date(fecha_hora)) |> 
-    reframe(Temperature = mean(temp_promedio_aire,na.rm=T),
-            VPD = mean(VPD,na.rm=T),
-            RH = mean(humed_rel_promedio,na.rm=T)) |> 
-    left_join(df |> 
-                group_by(fecha = as.Date(fecha_hora)) |> 
-                reframe(tmin = min(temp_minima,na.rm=T),
-                        tmax = min(temp_maxima,na.rm=T)) |> 
-                mutate(Ra = calc_ra(fecha,sitio),
-                       ETo = calc_et0(tmax,tmin,Ra)) |> 
-                select(-c(tmin,tmax,Ra))) |> 
-    mutate(sitio = sitio,
-           .before = fecha) |> 
+
+  df |>
+    mutate(VPD = calc_vpd(temp_promedio_aire, humed_rel_promedio)) |>
+    filter(between(hour(fecha_hora), 13, 14)) |>
+    group_by(fecha = as.Date(fecha_hora)) |>
+    reframe(
+      Temperature = mean(temp_promedio_aire, na.rm = T),
+      VPD = mean(VPD, na.rm = T),
+      RH = mean(humed_rel_promedio, na.rm = T)
+    ) |>
+    left_join(
+      df |>
+        group_by(fecha = as.Date(fecha_hora)) |>
+        reframe(
+          tmin = min(temp_minima, na.rm = T),
+          tmax = min(temp_maxima, na.rm = T)
+        ) |>
+        mutate(Ra = calc_ra(fecha, sitio), ETo = calc_et0(tmax, tmin, Ra)) |>
+        select(-c(tmin, tmax, Ra))
+    ) |>
+    mutate(sitio = sitio, .before = fecha) |>
     suppressMessages()
-    
-  
 }
 
 # Functions ---------------------------------------------------------------
