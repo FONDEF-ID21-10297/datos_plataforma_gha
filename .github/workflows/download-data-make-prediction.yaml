@@ -41,6 +41,7 @@ jobs:
       - name: Run R process
         shell: Rscript {0}
         run: |
+          pak::pkg_install("ODES-Chile/agrometR")
           pak::pkg_install("frzambra/agvAPI")
           source("R/01_data_potencial.R")
             

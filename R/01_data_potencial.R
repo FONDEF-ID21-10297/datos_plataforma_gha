@@ -17,15 +17,16 @@ library(agvAPI) # remotes::install_github('frzambra/agvAPI')
 library(tidymodels)
 library(terra)
 library(readr)
+library(agrometR) 
 
 # Parameters --------------------------------------------------------------
 cli::cli_h1("Parameters")
 
 edl_netrc(
-  # username = Sys.getenv("USERNAME"),
-  # password = Sys.getenv("PASSWORD")
-  username = "",
-  password = ""
+  username = Sys.getenv("USERNAME"),
+  password = Sys.getenv("PASSWORD")
+  # username = "",
+  # password = ""
   )
 
 with_gdalcubes()
@@ -38,6 +39,81 @@ serials <- list(
   la_esperanza = c('00205018'),
   rio_claro = c('00203E6E')
   )
+
+
+# Funciones Abel ---------------------------------------------------------
+calc_vpd <- \(temp, rh) {
+  es <- 0.6108 * exp((17.27 * temp) / (temp + 237.3))
+  ea <- es * (rh / 100)
+  vpd <- es - ea
+  return(vpd)
+}
+
+calc_ra <- \(fecha, sitio) {
+  J <- as.numeric(format(as.Date(fecha), "%j"))
+  
+  latitudes <- list('rio_claro' = -34.7014,'la_esperanza' = -34.3266)
+  
+  if (!(sitio %in% names(latitudes))) {
+    stop("Sitio inválido. Usa 'rio_claro' o 'la_esperanza'.")
+  }
+  
+  lat <- latitudes[[sitio]]
+  
+  phi <- lat * pi / 180
+  Gsc <- 0.0820
+  dr <- 1 + 0.033 * cos((2 * pi / 365) * J)
+  delta <- 0.409 * sin((2 * pi / 365) * J - 1.39)
+  omega_s <- acos(-tan(phi) * tan(delta))
+  
+  Ra <- (24 * 60 / pi) * Gsc * dr * 
+    (omega_s * sin(phi) * sin(delta) + cos(phi) * cos(delta) * sin(omega_s))
+  
+  return(Ra)
+}
+
+calc_et0 <- \(tmax, tmin, Ra) {
+  
+  Tmean <- (tmax + tmin) / 2
+
+  ET0 <- 0.0023 * (Tmean + 17.8) * sqrt(tmax - tmin) * Ra
+  return(ET0)
+}
+
+obtener_var <- \(sitio, inicio, final) {
+  
+  ema_id <- list('rio_claro' = 72,'la_esperanza' = 71)
+  
+  if (!(sitio %in% names(ema_id))) {
+    stop("Sitio inválido. Usa 'rio_claro' o 'la_esperanza'.")
+  }
+  
+  id <- ema_id[[sitio]]
+  
+  df <- get_agro_data(stations_id = id,
+                date_start = inicio, date_end = final) |> 
+    filter(as.Date(fecha_hora) < as.Date(now())) # LE BORRE EL ÚLTIMO DÍA YA QUE PUEDE QUE NO HAYAN DATOS COMPLETOS PARA TENER LA ET0
+  
+  df |> 
+    mutate(VPD = calc_vpd(temp_promedio_aire,humed_rel_promedio)) |> 
+    filter(between(hour(fecha_hora),13,14)) |> 
+    group_by(fecha = as.Date(fecha_hora)) |> 
+    reframe(Temperature = mean(temp_promedio_aire,na.rm=T),
+            VPD = mean(VPD,na.rm=T),
+            RH = mean(humed_rel_promedio,na.rm=T)) |> 
+    left_join(df |> 
+                group_by(fecha = as.Date(fecha_hora)) |> 
+                reframe(tmin = min(temp_minima,na.rm=T),
+                        tmax = min(temp_maxima,na.rm=T)) |> 
+                mutate(Ra = calc_ra(fecha,sitio),
+                       ETo = calc_et0(tmax,tmin,Ra)) |> 
+                select(-c(tmin,tmax,Ra))) |> 
+    mutate(sitio = sitio,
+           .before = fecha) |> 
+    suppressMessages()
+    
+  
+}
 
 # Functions ---------------------------------------------------------------
 equipo_sector_a_sector_equipo <- function(x = c("a_b", "c_d")){
@@ -265,28 +341,32 @@ get_climate <- function(site = "la_esperanza", date = today() - days(1)){
   
   cli::cli_h3("get_climate: {site} date {date}")
 
-  dET0 <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'ETo', time_span = c(date - days(1), date + days(1)))
-  dVPD <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'VPD', time_span = c(date - days(1), date + days(1)))
-  dTmp <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'Temperature', time_span = c(date - days(1), date + days(1)))
-  dHR  <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'HC Relative humidity', time_span = c(date - days(1), date + days(1)))
+  # dET0 <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'ETo', time_span = c(date - days(1), date + days(1)))
+  # dVPD <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'VPD', time_span = c(date - days(1), date + days(1)))
+  # dTmp <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'Te mperature', time_span = c(date - days(1), date + days(1)))
+  # dHR  <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'HC Relative humidity', time_span = c(date - days(1), date + days(1)))
   
-  dET0 <- dET0 |> 
-    filter(as_date(datetime) == date)
+  # dET0 <- dET0 |> 
+  #   filter(as_date(datetime) == date)
   
-  datas <- list(VPD = dVPD, Temperature = dTmp, HC = dHR) |> 
-    map(mutate, datetime = as_datetime(datetime, tz = "America/Santiago")) |> 
-    map(mutate, datetime = floor_date(datetime), hora = hour(datetime), date_registro = as_date(datetime)) |> 
-    # me quedo con los del día de interés
-    map(filter, date_registro == date) |>
-    map(filter, between(hora, 13, 14)) |> 
-    map(select, -c(datetime, extract_id, hora)) |> 
-    map(group_by, date_registro) |> 
-    map(summarise_all, function(x) mean(x,  na.rm = TRUE)) |> 
-    map(select, -date_registro) |> 
-    map(pull)
+  # datas <- list(VPD = dVPD, Temperature = dTmp, HC = dHR) |> 
+  #   map(mutate, datetime = as_datetime(datetime, tz = "America/Santiago")) |> 
+  #   map(mutate, datetime = floor_date(datetime), hora = hour(datetime), date_registro = as_date(datetime)) |> 
+  #   # me quedo con los del día de interés
+  #   map(filter, date_registro == date) |>
+  #   map(filter, between(hora, 13, 14)) |> 
+  #   map(select, -c(datetime, extract_id, hora)) |> 
+  #   map(group_by, date_registro) |> 
+  #   map(summarise_all, function(x) mean(x,  na.rm = TRUE)) |> 
+  #   map(select, -date_registro) |> 
+  #   map(pull)
+
+  inicio <- format(date, "%Y-%m%-%d 01:00:00")
+  final  <- format(date, "%Y-%m%-%d 24:00:00")
   
+  datas <- obtener_var(site, inicio, final)
   datas
-  
+   
   # esta parte requiere NO borrar todavias los tiffs
   raster <- fs::dir_ls(glue::glue("outputs/sentinel/{site}")) |> 
     head(1) |> 
@@ -295,7 +375,7 @@ get_climate <- function(site = "la_esperanza", date = today() - days(1)){
   raster <- raster[[1]]
   
   raster_et0 <- raster
-  values(raster_et0) <- dET0$`ETo[mm] (mm)`
+  values(raster_et0) <- datas$ETo #dET0$`ETo[mm] (mm)`
   
   raster_vpd <- raster
   values(raster_vpd) <- datas$VPD
@@ -304,13 +384,15 @@ get_climate <- function(site = "la_esperanza", date = today() - days(1)){
   values(raster_tmp) <- datas$Temperature
 
   raster_hc <- raster
-  values(raster_hc) <- datas$HC
+  values(raster_hc) <- datas$RH
   
   raster_climate <- c(raster_et0, raster_vpd, raster_tmp, raster_hc) 
   
   names(raster_climate) <- c("eto", "vpd_medio", "t_media", "rh_media")
   varnames(raster_climate) <- ""
   
+  if(interactive()) plot(raster_climate)
+
   cli::cli_inform("write_tif raster_climate")
   # debiese ser data temporal pues cada archivo pesa 9 MB por día en la_esperanza
   dir_out <- glue("outputs/climate/{site}")
