@@ -370,8 +370,13 @@ get_climate <- function(site = "la_esperanza", date = today() - days(1)){
   #   map(select, -date_registro) |> 
   #   map(pull)
 
-  inicio <- format(date, "%Y-%m%-%d 01:00:00")
-  final  <- format(date, "%Y-%m%-%d 24:00:00")
+
+  
+  as.character(stringr::str_glue("{year(date)}-{str_pad(month(date), width = 2, pad = 0)}-{str_pad(day(date), width = 2, pad = 0)} 01:00:00"))
+  # inicio <- format(date, "%Y-%m%-%d 01:00:00")
+  # final  <- format(date, "%Y-%m%-%d 24:00:00")
+  inicio <- as.character(stringr::str_glue("{year(date)}-{str_pad(month(date), width = 2, pad = 0)}-{str_pad(day(date), width = 2, pad = 0)} 01:00:00"))
+  final <- as.character(stringr::str_glue("{year(date)}-{str_pad(month(date), width = 2, pad = 0)}-{str_pad(day(date), width = 2, pad = 0)} 24:00:00"))
   
   datas <- obtener_var(site, inicio, final)
   datas
