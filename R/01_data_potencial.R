@@ -93,7 +93,12 @@ obtener_var <- \(sitio, inicio, final) {
     stations_id = id,
     date_start = inicio,
     date_end = final
-  ) |>
+  )
+  
+  cli::cli_inform("obtener_var {sitio} {inicio} {final}")
+  print(df)
+  
+  df <- df |>
     filter(as.Date(fecha_hora) < as.Date(now())) # LE BORRE EL ÚLTIMO DÍA YA QUE PUEDE QUE NO HAYAN DATOS COMPLETOS PARA TENER LA ET0
 
   df |>
