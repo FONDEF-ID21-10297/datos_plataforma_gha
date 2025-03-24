@@ -24,5 +24,6 @@ Imports:
     imputeTS,
     tidymodels,
     terra,
-    readr
+    readr,
+    ranger
 Remotes: frzambra/agvAPI
