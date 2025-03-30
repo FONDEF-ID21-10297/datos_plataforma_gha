@@ -26,5 +26,6 @@ Imports:
     terra,
     readr,
     ranger,
-    rmarkdown
+    rmarkdown,
+    httr2
 Remotes: frzambra/agvAPI

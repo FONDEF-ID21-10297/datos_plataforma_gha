@@ -13,11 +13,12 @@ library(terra)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-library(agvAPI) # remotes::install_github('frzambra/agvAPI')
+# library(agvAPI) # remotes::install_github('frzambra/agvAPI')
 library(tidymodels)
 library(terra)
 library(readr)
 library(agrometR) 
+library(httr2)
 
 # Parameters --------------------------------------------------------------
 cli::cli_h1("Parameters")
@@ -28,6 +29,9 @@ edl_netrc(
   # username = "",
   # password = ""
   )
+
+# api_url <- "https://agviewer.com/api/v1/device/data"
+# usrpass <- c("agricolagarces", "6<9W=9S+tb:")
 
 with_gdalcubes()
 
@@ -40,6 +44,14 @@ serials <- list(
   rio_claro = c('00203E6E')
   )
 
+api_url <- "https://agviewer.com/api/v1/device/data"
+usrpass <- c("agricolagarces", "6<9W=9S+tb:")
+
+quiet <- function(x) { 
+  sink(tempfile()) 
+  on.exit(sink()) 
+  invisible(force(x)) 
+} 
 
 # Funciones Abel ---------------------------------------------------------
 calc_vpd <- \(temp, rh) {
@@ -124,6 +136,90 @@ obtener_var <- \(sitio, inicio, final) {
     suppressMessages()
 }
 
+# agvAPI -----------------------------------------------------------------
+getDataAGV_clima <- function (station_id = "z6-14410", var = "Temperature", time_span = c("2022-07-20",  "2022-07-25")) {
+    time_span <- lubridate::as_datetime(time_span)
+    resp <- getdataAGV(station_id = station_id, time_span = time_span)
+    type <- stringr::str_extract(station_id, "z6|[:alpha:]|[:digit:]+")
+    if (is.numeric(type)) 
+        out <- .parseAGV(resp, station_id, var)
+    if (type == "z6") {
+        out <- .parseAGV(resp, station_id, var, type = "z6")
+    }
+    else if (is.character(type)) 
+        out <- .parseAGV(resp, station_id, var)
+    stopifnot(`Does not correspond to any station type` = !is.na(type))
+    return(out)
+}
+
+getdataAGV <- function (station_id, time_span) {
+    resp <- tibble::as_tibble(as.data.frame(dplyr::pull(
+      jsonlite::fromJSON(httr2::resp_body_string(httr2::req_perform(httr2::req_url_path_append(
+        httr2::req_headers(
+          httr2::req_auth_basic(httr2::request(api_url), usrpass[1], usrpass[2]),
+          Accept = "application/json"
+        ),
+        glue::glue(
+          "?stations={station_id}&start={time_span[1]}&end={time_span[2]}"
+        )
+      )))),
+      sensors
+    )))
+}
+
+.parseAGV <- function (resp, station_id, var, type = "generica") {
+    if (type == "z6") {
+        data_tim_mes <- tibble::as_tibble(as.data.frame(dplyr::pull(
+          dplyr::filter(resp, grepl("Atmos|ATMOS", name)),
+          data
+        )))
+        fun_sel <- function(d, v) {
+          out <- dplyr::filter(d, grepl(v, description))
+          stopifnot(
+            `Variable name match more than one or none` = nrow(out) == 1
+          )
+          out
+        }
+        data_out <- purrr::map_df(
+          dplyr::pull(data_tim_mes, measurements),
+          fun_sel,
+          {{ var }}
+        )
+        new_name <- dplyr::pull(
+          dplyr::distinct(data_out, description),
+          description
+        )
+        data_out <- tibble::as_tibble(dplyr::select(
+          dplyr::mutate(
+            purrr::set_names(dplyr::select(data_out, 2), new_name),
+            datetime = lubridate::ymd_hm(data_tim_mes$timestamp)
+          ),
+          2:1
+        ))
+    }
+    else {
+        data_out <- dplyr::filter(resp, grepl(glue::glue("{var}|{tolower(var)}"), 
+            name))
+        stopifnot(`Variable name match more than one or none` = nrow(data_out) == 
+            1)
+        data_out <- purrr::map_df(dplyr::pull(tibble::as_tibble(as.data.frame(dplyr::pull(data_out, 
+            data))), measurements), function(d) {
+            tidyr::pivot_wider(d, names_from = description, values_from = value)
+        })
+        if (var == "Temperature" | var == "VPD" | stringr::str_detect(var, 
+            "Relative humidity")) 
+            data_out <- dplyr::select(dplyr::filter(data_out, 
+                if_any(1, function(x) x == "avg")), 1:2)
+        datetime <- dplyr::pull(tibble::as_tibble(as.data.frame(dplyr::pull(dplyr::filter(resp, 
+            grepl(glue::glue("{var}|{tolower(var)}"), name)), 
+            data))), timestamp)
+        data_out <- dplyr::relocate(dplyr::mutate(dplyr::mutate(data_out, 
+            datetime = datetime), datetime = lubridate::ymd_hm(datetime)), 
+            datetime)
+    }
+    return(data_out)
+}
+
 # Functions ---------------------------------------------------------------
 equipo_sector_a_sector_equipo <- function(x = c("a_b", "c_d")){
   x |> 
@@ -168,19 +264,21 @@ download_rasters_site_date <- function(site = "la_esperanza",
   
   cli::cli_inform("cube_view")
   
-  v <- cube_view(
-    srs = "EPSG:32719",
-    extent = list(
-      t0 = as.character(start),
-      t1 = as.character(end),
-      left = bb[1],
-      right = bb[3],
-      top = bb[4],
-      bottom = bb[2]
-    ),
-    dx = 10, 
-    dy = 10,
-    dt = "P5D"
+  v <- quiet(
+    cube_view(
+      srs = "EPSG:32719",
+      extent = list(
+        t0 = as.character(start),
+        t1 = as.character(end),
+        left = bb[1],
+        right = bb[3],
+        top = bb[4],
+        bottom = bb[2]
+      ),
+      dx = 10,
+      dy = 10,
+      dt = "P5D"
+    )
   )
   
   col <- stac_image_collection(items$features)
@@ -350,36 +448,34 @@ get_climate <- function(site = "la_esperanza", date = today() - days(1)){
   
   cli::cli_h3("get_climate: {site} date {date}")
 
-  # dET0 <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'ETo', time_span = c(date - days(1), date + days(1)))
-  # dVPD <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'VPD', time_span = c(date - days(1), date + days(1)))
-  # dTmp <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'Te mperature', time_span = c(date - days(1), date + days(1)))
-  # dHR  <- agvAPI::getDataAGV_clima(serials[[site]][1], var = 'HC Relative humidity', time_span = c(date - days(1), date + days(1)))
+  dET0 <- getDataAGV_clima(serials[[site]][1], var = 'ETo', time_span = c(date - days(1), date + days(1)))
+  dVPD <- getDataAGV_clima(serials[[site]][1], var = 'VPD', time_span = c(date - days(1), date + days(1)))
+  dTmp <- getDataAGV_clima(serials[[site]][1], var = 'Temperature', time_span = c(date - days(1), date + days(1)))
+  dHR  <- getDataAGV_clima(serials[[site]][1], var = 'HC Relative humidity', time_span = c(date - days(1), date + days(1)))
   
-  # dET0 <- dET0 |> 
-  #   filter(as_date(datetime) == date)
+  dET0 <- dET0 |> 
+    filter(as_date(datetime) == date)
   
-  # datas <- list(VPD = dVPD, Temperature = dTmp, HC = dHR) |> 
-  #   map(mutate, datetime = as_datetime(datetime, tz = "America/Santiago")) |> 
-  #   map(mutate, datetime = floor_date(datetime), hora = hour(datetime), date_registro = as_date(datetime)) |> 
-  #   # me quedo con los del día de interés
-  #   map(filter, date_registro == date) |>
-  #   map(filter, between(hora, 13, 14)) |> 
-  #   map(select, -c(datetime, extract_id, hora)) |> 
-  #   map(group_by, date_registro) |> 
-  #   map(summarise_all, function(x) mean(x,  na.rm = TRUE)) |> 
-  #   map(select, -date_registro) |> 
-  #   map(pull)
-
-
+  datas <- list(VPD = dVPD, Temperature = dTmp, HC = dHR) |> 
+    map(mutate, datetime = as_datetime(datetime, tz = "America/Santiago")) |> 
+    map(mutate, datetime = floor_date(datetime), hora = hour(datetime), date_registro = as_date(datetime)) |> 
+    # me quedo con los del día de interés
+    map(filter, date_registro == date) |>
+    map(filter, between(hora, 13, 14)) |> 
+    map(select, -c(datetime, extract_id, hora)) |> 
+    map(group_by, date_registro) |> 
+    map(summarise_all, function(x) mean(x,  na.rm = TRUE)) |> 
+    map(select, -date_registro) |> 
+    map(pull)
   
-  as.character(stringr::str_glue("{year(date)}-{str_pad(month(date), width = 2, pad = 0)}-{str_pad(day(date), width = 2, pad = 0)} 01:00:00"))
-  # inicio <- format(date, "%Y-%m%-%d 01:00:00")
-  # final  <- format(date, "%Y-%m%-%d 24:00:00")
-  inicio <- as.character(stringr::str_glue("{year(date)}-{str_pad(month(date), width = 2, pad = 0)}-{str_pad(day(date), width = 2, pad = 0)} 01:00:00"))
-  final <- as.character(stringr::str_glue("{year(date)}-{str_pad(month(date), width = 2, pad = 0)}-{str_pad(day(date), width = 2, pad = 0)} 24:00:00"))
+  # as.character(stringr::str_glue("{year(date)}-{str_pad(month(date), width = 2, pad = 0)}-{str_pad(day(date), width = 2, pad = 0)} 01:00:00"))
+  # # inicio <- format(date, "%Y-%m%-%d 01:00:00")
+  # # final  <- format(date, "%Y-%m%-%d 24:00:00")
+  # inicio <- as.character(stringr::str_glue("{year(date)}-{str_pad(month(date), width = 2, pad = 0)}-{str_pad(day(date), width = 2, pad = 0)} 01:00:00"))
+  # final <- as.character(stringr::str_glue("{year(date)}-{str_pad(month(date), width = 2, pad = 0)}-{str_pad(day(date), width = 2, pad = 0)} 24:00:00"))
   
-  datas <- obtener_var(site, inicio, final)
-  datas
+  # datas <- obtener_var(site, inicio, final)
+  # datas
    
   # esta parte requiere NO borrar todavias los tiffs
   raster <- fs::dir_ls(glue::glue("outputs/sentinel/{site}")) |> 
@@ -389,7 +485,7 @@ get_climate <- function(site = "la_esperanza", date = today() - days(1)){
   raster <- raster[[1]]
   
   raster_et0 <- raster
-  values(raster_et0) <- datas$ETo #dET0$`ETo[mm] (mm)`
+  values(raster_et0) <- dET0$`ETo[mm] (mm)` # datas$ETo 
   
   raster_vpd <- raster
   values(raster_vpd) <- datas$VPD
@@ -398,7 +494,7 @@ get_climate <- function(site = "la_esperanza", date = today() - days(1)){
   values(raster_tmp) <- datas$Temperature
 
   raster_hc <- raster
-  values(raster_hc) <- datas$RH
+  values(raster_hc) <- datas$HC
   
   raster_climate <- c(raster_et0, raster_vpd, raster_tmp, raster_hc) 
   
@@ -438,6 +534,8 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
   names(r) <- tolower(names(r))
   names(r)
 
+  if(interactive()) plot(r)
+
   modelo <- readRDS("data/model/random_forest_tme_split.rds")
   
   r_df <- as.data.frame(r) |> 
@@ -449,10 +547,7 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
   names(out_ras)  <- '.pred'
   values(out_ras) <- round(out$.pred, 5)
   
-  if(interactive()){
-    plot(r)
-    plot(out_ras)
-  }
+  if(interactive()) plot(out_ras)
   
   # potencial raster --------------------------------------------------------
   cli::cli_inform("export potencial raster")
@@ -478,10 +573,8 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
   
   site_sf
   
-  if(interactive()){
-    plot(site_sf)
-  }
-  
+  if(interactive()) plot(site_sf)
+
   #variación temporal del potencial en los sectores de riego
   dpot_site <- terra::extract(out_ras, site_sf, fun = mean) |> 
     as_tibble() |> 
@@ -498,7 +591,6 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
       plot()
   }
   
-  
   fs::dir_create("data/potencial-csv")
   file_pot <- "data/potencial-csv/potencial-sites.csv"
   
@@ -510,7 +602,7 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
   
   dpot_site |> 
     bind_rows(dpot) |> 
-    distinct() |> 
+    distinct(date, site, id, .keep_all = TRUE) |> 
     arrange(date, site, id) |> 
     write_csv(file_pot)
 
@@ -526,6 +618,8 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
     dcli <- tibble()
   }
   
+  dcli |> group_by(site) |> summarise_all(.funs = median, na.rm =TRUE)
+
   r_cli |> 
     as_tibble() |> 
     # hacer mas simple 
@@ -537,7 +631,7 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
       .before = 1
     ) |> 
     bind_rows(dcli) |> 
-    distinct() |> 
+    distinct(date, site, .keep_all = TRUE) |> 
     arrange(date, site) |> 
     write_csv(file_cli)
   
@@ -570,44 +664,44 @@ fs::dir_delete("outputs/")
 # All dates ---------------------------------------------------------------
 # dates <- seq(ymd("20241001"), today() - 1, by = "1 day")
 # dates <- rev(dates)
-# 
+
 # dates_dwloaded <- fs::dir_ls("data/potencial-raster/", recurse = TRUE) |>
 #   basename() |>
 #   tools::file_path_sans_ext() |>
 #   str_subset("[a-z]", negate = TRUE) |>
 #   unique() |>
 #   ymd()
-# 
+
 # dates <- setdiff(as.character(dates), as.character(dates_dwloaded))
 # dates <- setdiff(as.character(dates), c("2024-11-08"))
 # dates <- ymd(dates)
-# 
+
 # dates
-# 
+
 # walk(dates, function(date = sample(dates, 1)){
-# 
+
 #   cli::cli_h1(as.character(date))
-# 
+
 #   cli::cli_progress_step(as.character(date))
-#   
+  
 #   cli::cli_h2("Cleanup")
-# 
+
 #   cli::cli_h2("Download rasters")
 #   purrr::walk2(sites, rep(date, 2), download_rasters_site_date)
-# 
-#   cli::cli_h2("Indices")
-#   purrr::walk(sites, get_indices)
-# 
-#   cli::cli_h2("Smoothing")
-#   purrr::walk(sites, smoothing_rasters, date = date)
-# 
+
 #   cli::cli_h2("Climate")
 #   purrr::walk(sites, get_climate, date = date - days(1))
-# 
+
+#   cli::cli_h2("Indices")
+#   purrr::walk(sites, get_indices)
+
+#   cli::cli_h2("Smoothing")
+#   purrr::walk(sites, smoothing_rasters, date = date)
+
 #   cli::cli_h2("make_prediction_and_save")
 #   purrr::walk(sites, make_prediction_and_save, date = date)
-# 
+
 #   cli::cli_h2("Cleanup")
 #   fs::dir_delete("outputs/")
-# 
+
 # })
