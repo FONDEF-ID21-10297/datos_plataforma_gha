@@ -7,7 +7,7 @@ library(ggplot2)
 Sys.time()
 ```
 
-    [1] "2025-03-31 00:54:13 UTC"
+    [1] "2025-03-31 21:17:08 UTC"
 
 ``` r
 dpot <- readr::read_csv("data/potencial-csv/potencial-sites.csv", show_col_types = FALSE)
@@ -34,9 +34,6 @@ dcli |>
   facet_wrap(vars(name), scales = "free") +
   theme_minimal()
 ```
-
-    Warning: Removed 2 rows containing missing values or values outside the scale range
-    (`geom_point()`).
 
 ![](readme_files/figure-commonmark/clima-1.png)
 
