@@ -1,4 +1,5 @@
 library(tidyverse)
+library(glue)
 
 d <- read_rds("data/old/clima_dia.rds")
 
@@ -16,6 +17,8 @@ r_cli <- d |>
     t_media,
     rh_media
   )
+
+
 # usamos la misma idea que en el script
 # climate -----------------------------------------------------------------
 fs::dir_create(glue("data/climate"))
