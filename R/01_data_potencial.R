@@ -662,8 +662,8 @@ fs::dir_delete("outputs/")
 
 
 # All dates ---------------------------------------------------------------
-# dates <- seq(ymd("20241001"), today() - 1, by = "1 day")
-# dates <- rev(dates)
+# dates <- seq(ymd("20231001"), today() - 1, by = "1 day")
+# dates <- dates
 
 # dates_dwloaded <- fs::dir_ls("data/potencial-raster/", recurse = TRUE) |>
 #   basename() |>
@@ -678,7 +678,7 @@ fs::dir_delete("outputs/")
 
 # dates
 
-# walk(dates, function(date = sample(dates, 1)){
+# walk(dates, safely(function(date = sample(dates, 1)){
 
 #   cli::cli_h1(as.character(date))
 
@@ -704,4 +704,4 @@ fs::dir_delete("outputs/")
 #   cli::cli_h2("Cleanup")
 #   fs::dir_delete("outputs/")
 
-# })
+# }))
