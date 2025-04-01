@@ -43,7 +43,7 @@ jobs:
         run: |
           pak::pkg_install("ODES-Chile/agrometR")
           pak::pkg_install("frzambra/agvAPI")
-          source("R/01_data_potencial.R")
+          source("R/01-data-potencial.R")
             
       - name: Render       
         run: |

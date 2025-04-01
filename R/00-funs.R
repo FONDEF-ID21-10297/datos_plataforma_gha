@@ -236,7 +236,7 @@ download_rasters_site_date <- function(site = "la_esperanza",
   # se le da la fecha de hoy y por defecto obtiene la fecha de hace un mes atrás
   # luego descarga los tif disponibles entre esas fechas
   
-  cli::cli_h3("download_rasters_site_date: {site} {start} to {end}")
+  cli::cli_h3("download_rasters_site_date: {site} {as.character(start)} to {as.character(end)}")
   
   cli::cli_inform("read_sf")
   
@@ -636,71 +636,3 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
     write_csv(file_cli)
   
 }
-
-# Process -----------------------------------------------------------------
-cli::cli_h1("Process")
-
-fecha_hoy <- today()
-
-cli::cli_h2("Download rasters")
-purrr::walk2(sites, rep(fecha_hoy, 2), download_rasters_site_date)
-
-cli::cli_h2("Indices")
-purrr::walk(sites, get_indices)
-
-cli::cli_h2("Smoothing")
-purrr::walk(sites, smoothing_rasters, date = fecha_hoy)
-
-cli::cli_h2("Climate")
-purrr::walk(sites, get_climate, date = fecha_hoy - days(1))
-
-cli::cli_h2("make_prediction_and_save")
-purrr::walk(sites, make_prediction_and_save, date = fecha_hoy)
-
-# cli::cli_h2("Cleanup")
-fs::dir_delete("outputs/")
-
-
-# All dates ---------------------------------------------------------------
-dates <- seq(ymd("20231001"), today() - 1, by = "1 day")
-dates <- dates[!month(dates) %in% 5:9]
-
-dates_dwloaded <- fs::dir_ls("data/potencial-raster/", recurse = TRUE) |>
-  basename() |>
-  tools::file_path_sans_ext() |>
-  str_subset("[a-z]", negate = TRUE) |>
-  unique() |>
-  ymd()
-
-dates <- setdiff(as.character(dates), as.character(dates_dwloaded))
-dates <- ymd(dates)
-
-dates
-
-walk(dates, safely(function(date = sample(dates, 1)){
-
-  cli::cli_h1(as.character(date))
-
-  cli::cli_progress_step(as.character(date))
-  
-  cli::cli_h2("Cleanup")
-
-  cli::cli_h2("Download rasters")
-  purrr::walk2(sites, rep(date, 2), download_rasters_site_date)
-
-  cli::cli_h2("Climate")
-  purrr::walk(sites, get_climate, date = date - days(1))
-
-  cli::cli_h2("Indices")
-  purrr::walk(sites, get_indices)
-
-  cli::cli_h2("Smoothing")
-  purrr::walk(sites, smoothing_rasters, date = date)
-
-  cli::cli_h2("make_prediction_and_save")
-  purrr::walk(sites, make_prediction_and_save, date = date)
-
-  cli::cli_h2("Cleanup")
-  fs::dir_delete("outputs/")
-
-}))
