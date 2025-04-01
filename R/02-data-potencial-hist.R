@@ -11,6 +11,8 @@ dates_dwloaded <- fs::dir_ls("data/potencial-raster/", recurse = TRUE) |>
   unique() |>
   ymd()
 
+length(dates_dwloaded)/length(dates)
+
 dates <- setdiff(as.character(dates), as.character(dates_dwloaded))
 dates <- ymd(dates)
 
