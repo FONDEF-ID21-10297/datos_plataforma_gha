@@ -231,7 +231,7 @@ equipo_sector_a_sector_equipo <- function(x = c("a_b", "c_d")){
 
 download_rasters_site_date <- function(site = "la_esperanza",
                                        end = today(),
-                                       start = end - days(30)){
+                                       start = end - days(45)){
   
   # se le da la fecha de hoy y por defecto obtiene la fecha de hace un mes atrás
   # luego descarga los tif disponibles entre esas fechas
@@ -595,7 +595,7 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
   file_pot <- "data/potencial-csv/potencial-sites.csv"
   
   if(file.exists(file_pot)) {
-    dpot <- read_csv(file_pot)
+    dpot <- read_csv(file_pot, show_col_types = FALSE)
   } else {
     dpot <- tibble()
   }
@@ -613,7 +613,7 @@ make_prediction_and_save <- function(site = "la_esperanza", date = today()){
   file_cli <- "data/climate/climate-sites.csv"
   
   if(file.exists(file_cli)) {
-    dcli <- read_csv(file_cli)
+    dcli <- read_csv(file_cli, show_col_types = FALSE)
   } else {
     dcli <- tibble()
   }

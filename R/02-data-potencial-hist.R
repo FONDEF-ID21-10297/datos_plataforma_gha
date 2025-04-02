@@ -3,6 +3,7 @@ source("R/00-funs.R")
 # All dates ---------------------------------------------------------------
 dates <- seq(ymd("20231001"), today() - 1, by = "1 day")
 dates <- dates[!month(dates) %in% 5:9]
+dates <- rev(dates)
 
 dates_dwloaded <- fs::dir_ls("data/potencial-raster/", recurse = TRUE) |>
   basename() |>
@@ -18,13 +19,14 @@ dates <- ymd(dates)
 
 dates
 
-walk(dates, safely(function(date = sample(dates, 1)){
+purrr::walk(dates, safely(function(date = sample(dates, 1)){
 
   cli::cli_h1(as.character(date))
 
   cli::cli_progress_step(as.character(date))
   
   cli::cli_h2("Cleanup")
+  safely(fs::dir_delete)("outputs/")
 
   cli::cli_h2("Download rasters")
   purrr::walk2(sites, rep(date, 2), download_rasters_site_date)
