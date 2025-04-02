@@ -3,7 +3,7 @@ source("R/00-funs.R")
 # All dates ---------------------------------------------------------------
 dates <- seq(ymd("20231001"), today() - 1, by = "1 day")
 dates <- dates[!month(dates) %in% 5:9]
-dates <- rev(dates)
+# dates <- rev(dates)
 
 dates_dwloaded <- fs::dir_ls("data/potencial-raster/", recurse = TRUE) |>
   basename() |>
@@ -16,8 +16,6 @@ length(dates_dwloaded)/length(dates)
 
 dates <- setdiff(as.character(dates), as.character(dates_dwloaded))
 dates <- ymd(dates)
-
-dates
 
 purrr::walk(dates, safely(function(date = sample(dates, 1)){
 

@@ -21,3 +21,14 @@ purrr::walk(sites, make_prediction_and_save, date = fecha_hoy)
 
 # cli::cli_h2("Cleanup")
 fs::dir_delete("outputs/")
+
+cli::cli_h2("Creando data/potencial-raster/dates.csv")
+dir("data/potencial-raster", full.names = TRUE, recursive = TRUE) |> 
+  basename() |> 
+  stringr::str_remove("\\.tif") |> 
+  unique() |> 
+  sort() |> 
+  tibble::tibble(date = _) |> 
+  readr::write_csv("data/potencial-raster/dates.csv")
+
+
