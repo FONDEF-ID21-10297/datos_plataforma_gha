@@ -25,6 +25,7 @@ fs::dir_delete("outputs/")
 cli::cli_h2("Creando data/potencial-raster/dates.csv")
 dir("data/potencial-raster", full.names = TRUE, recursive = TRUE) |> 
   basename() |> 
+  stringr::str_subset("\\.tif") |> 
   stringr::str_remove("\\.tif") |> 
   unique() |> 
   sort() |> 
