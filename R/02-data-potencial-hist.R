@@ -1,7 +1,7 @@
 source("R/00-funs.R")
 
 # All dates ---------------------------------------------------------------
-dates <- seq(ymd("20231001"), today() - 1, by = "1 day")
+dates <- seq(ymd("20231001"), today(), by = "1 day")
 dates <- dates[!month(dates) %in% 5:9]
 dates <- rev(dates)
 
