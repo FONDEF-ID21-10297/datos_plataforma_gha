@@ -7,7 +7,7 @@ library(ggplot2)
 Sys.time()
 ```
 
-    [1] "2025-11-17 00:57:30 UTC"
+    [1] "2025-11-18 00:46:42 UTC"
 
 ``` r
 dpot <- readr::read_csv("data/potencial-csv/potencial-sites.csv", show_col_types = FALSE)
@@ -34,6 +34,9 @@ dcli |>
   facet_wrap(vars(name), scales = "free") +
   theme_minimal()
 ```
+
+    Warning: Removed 47 rows containing missing values or values outside the scale range
+    (`geom_line()`).
 
     Warning: Removed 197 rows containing missing values or values outside the scale range
     (`geom_point()`).
