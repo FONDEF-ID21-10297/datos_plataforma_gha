@@ -7,7 +7,7 @@ library(ggplot2)
 Sys.time()
 ```
 
-    [1] "2026-11-27 05:46:19 UTC"
+    [1] "2026-11-28 05:21:09 UTC"
 
 ``` r
 dpot <- readr::read_csv("data/potencial-csv/potencial-sites.csv", show_col_types = FALSE)
